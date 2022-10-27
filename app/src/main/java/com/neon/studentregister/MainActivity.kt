@@ -1,5 +1,6 @@
 package com.neon.studentregister
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
@@ -19,6 +20,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: StudentViewModel
     private lateinit var studentRecyclerView: RecyclerView
     private lateinit var adapter: StudentRecyclerViewAdapter
+    private var isListItemClicked = false
+    private lateinit var selectedStudent: Student
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,11 +37,23 @@ class MainActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this, factory)[StudentViewModel::class.java]
 
         saveButton.setOnClickListener {
-            saveStudentData()
-            clearInput()
+            if(isListItemClicked) {
+                updateStudentData()
+                clearInput()
+            } else {
+                saveStudentData()
+                clearInput()
+            }
+
         }
         clearButton.setOnClickListener {
-            clearInput()
+            if(isListItemClicked) {
+                deleteStudentData()
+                clearInput()
+            } else {
+                clearInput()
+            }
+
         }
         initRecyclerView()
     }
@@ -52,6 +67,38 @@ class MainActivity : AppCompatActivity() {
             )
         )
     }
+
+
+    private fun updateStudentData() {
+        viewModel.updateStudent(
+            Student(
+                selectedStudent.id,
+                nameEditText.text.toString(),
+                emailEditText.text.toString()
+            )
+        )
+
+        saveButton.text = "Save"
+        clearButton.text = "Clear"
+        isListItemClicked = false
+    }
+
+
+    private fun deleteStudentData() {
+        viewModel.deleteStudent(
+            Student(
+                selectedStudent.id,
+                nameEditText.text.toString(),
+                emailEditText.text.toString()
+            )
+        )
+
+        saveButton.text = "Save"
+        clearButton.text = "Clear"
+        isListItemClicked = false
+    }
+
+
     private fun clearInput() {
         nameEditText.setText("")
         emailEditText.setText("")
@@ -59,7 +106,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         studentRecyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = StudentRecyclerViewAdapter()
+        adapter = StudentRecyclerViewAdapter{
+            selectedItem: Student -> listItemClicked(selectedItem)
+        }
         studentRecyclerView.adapter = adapter
         displayStudentsList()
     }
@@ -70,4 +119,14 @@ class MainActivity : AppCompatActivity() {
             adapter.notifyDataSetChanged()
         }
     }
+
+    private fun listItemClicked(student: Student) {
+        selectedStudent = student
+        saveButton.text = "Update"
+        clearButton.text = "Delete"
+        isListItemClicked = true
+
+        nameEditText.setText(selectedStudent.name)
+        emailEditText.setText(selectedStudent.email)
+     }
 }
